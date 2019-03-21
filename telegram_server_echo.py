@@ -19,6 +19,29 @@ def 네이버_실검():
     return keyword_list
 
 
+def 네이버_블로그_검색(keyword):
+    url = 'https://search.naver.com/search.naver'
+    params = {
+        'where': 'post',
+        'sm': 'tab_jum',
+        'query': keyword,
+    }
+    res = requests.get(url, params=params)
+    html = res.text
+    soup = BeautifulSoup(html, 'html.parser')
+
+    post_list = []
+    for tag in soup.select('.sh_blog_title'):
+        title = tag.text
+        url = tag['href']
+        # TODO: 요약문, 대표이미지, 글쓴날짜
+        post_list.append({
+            'url': url,
+            'title': title,
+        })
+    return post_list
+
+
 def start(bot, update):
     chat_id = update.message.chat_id
     text = update.message.text
@@ -29,8 +52,16 @@ def echo(bot, update):
     chat_id = update.message.chat_id
     text = update.message.text  # 수신한 텍스트 메세지
 
-    if text == '네이버 실검':
+    if text.lower() in ['네이버 실검', 'naver']:
         response = "\n".join(네이버_실검())
+    elif text.startswith('블로그 검색:'):
+        검색어 = text[7:]
+        line_list = []
+        for post in 네이버_블로그_검색(검색어):
+            line = '{}\n{}'.format(post['title'], post['url'])
+            line_list.append(line)
+        response = '\n\n'.join(line_list)
+    # TODO: 네이버 블로그에서 LS산전 검색해줘 => 정규표현식
     else:
         response = "니가 무슨 말 하는 지 모르겠어. :("
 
@@ -42,11 +73,12 @@ def echo(bot, update):
 
 def main(token):
     bot = Updater(token=TOKEN)
+
+    # /start
     handler = CommandHandler('start', start)
-
     bot.dispatcher.add_handler(handler)
-    handler = MessageHandler(Filters.text, echo)
 
+    handler = MessageHandler(Filters.text, echo)
     bot.dispatcher.add_handler(handler)
 
     bot.start_polling()
