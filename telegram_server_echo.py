@@ -1,3 +1,4 @@
+import re
 from telegram.ext import Updater, Filters
 from telegram.ext import CommandHandler, ConversationHandler, MessageHandler
 
@@ -52,18 +53,32 @@ def echo(bot, update):
     chat_id = update.message.chat_id
     text = update.message.text  # 수신한 텍스트 메세지
 
-    if text.lower() in ['네이버 실검', 'naver']:
-        response = "\n".join(네이버_실검())
-    elif text.startswith('블로그 검색:'):
-        검색어 = text[7:]
-        line_list = []
-        for post in 네이버_블로그_검색(검색어):
-            line = '{}\n{}'.format(post['title'], post['url'])
-            line_list.append(line)
-        response = '\n\n'.join(line_list)
-    # TODO: 네이버 블로그에서 LS산전 검색해줘 => 정규표현식
-    else:
-        response = "니가 무슨 말 하는 지 모르겠어. :("
+    try:
+        네이버_블로그_검색_키워드_패턴 = r"블로그에?서?(.+)검색"
+        matched = re.search(네이버_블로그_검색_키워드_패턴, text)
+        if matched:
+            검색어 = matched.group(1)
+            line_list = []
+            for post in 네이버_블로그_검색(검색어):
+                line = '{}\n{}'.format(post['title'], post['url'])
+                line_list.append(line)
+            response = '\n\n'.join(line_list)
+
+        elif text.lower() in ['네이버 실검', 'naver']:
+            response = "\n".join(네이버_실검())
+
+        elif text.startswith('블로그 검색:'):
+            검색어 = text[7:]
+            line_list = []
+            for post in 네이버_블로그_검색(검색어):
+                line = '{}\n{}'.format(post['title'], post['url'])
+                line_list.append(line)
+            response = '\n\n'.join(line_list)
+
+        else:
+            response = "니가 무슨 말 하는 지 모르겠어. :("
+    except Exception as e:
+        response = '예기치못한 오류가 발생했습니다. -' + str(e)
 
     bot.send_message(chat_id=chat_id, text=response)
 
@@ -88,5 +103,5 @@ def main(token):
 
 
 if __name__ == '__main__':
-    TOKEN = '...'  # FIXME: 토큰 지정
+    TOKEN = '880339082:AAEa3xDy1tX5mWGja91s1BqO2Ydr6RQlX9Q'  # FIXME: 토큰 지정
     main(TOKEN)
