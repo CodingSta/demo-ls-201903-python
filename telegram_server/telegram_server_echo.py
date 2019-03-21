@@ -8,6 +8,7 @@ TASK_CLS_LIST = [
     # tasks.YaTask,
     tasks.NaverRealtimeKeywordsTask,
     tasks.NaverBlogSearchTask,
+    tasks.FaceTask,
 ]
 
 
@@ -19,11 +20,13 @@ def start(bot, update):
 
 def echo(bot, update):
     chat_id = update.message.chat_id
-    text = update.message.text  # 수신한 텍스트 메세지
+
+    print('chat_id :', chat_id)
+    print(update)
 
     try:
         for task_cls in TASK_CLS_LIST:
-            task = task_cls(text)
+            task = task_cls(update, TOKEN)
             if task.is_valid():
                 response = task.proc()
                 break
@@ -35,8 +38,6 @@ def echo(bot, update):
 
     bot.send_message(chat_id=chat_id, text=response)
 
-    print('chat_id :', chat_id)
-    print(update)
 
 
 def main(token):
@@ -46,7 +47,7 @@ def main(token):
     handler = CommandHandler('start', start)
     bot.dispatcher.add_handler(handler)
 
-    handler = MessageHandler(Filters.text, echo)
+    handler = MessageHandler(Filters.all, echo)
     bot.dispatcher.add_handler(handler)
 
     bot.start_polling()
